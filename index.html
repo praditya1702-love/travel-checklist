@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Granular Travel Checklist + Shopping List</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --border: #e2e8f0;
+      --success: #16a34a;
+      --cart: #ea580c;
+      --cart-soft: #fff7ed;
+      --cart-border: #fdba74;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-soft: #1e3a8a;
+      --border: #334155;
+      --success: #22c55e;
+      --cart: #f97316;
+      --cart-soft: #431407;
+      --cart-border: #9a3412;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 20px 16px 80px;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      position: sticky;
+      top: 10px;
+      z-index: 100;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 0.83rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    button:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-cart-toggle {
+      background: var(--cart-soft);
+      color: var(--cart);
+      border-color: var(--cart-border);
+      font-weight: 600;
+    }
+
+    .btn-cart-toggle:hover {
+      border-color: var(--cart);
+      color: var(--cart);
+    }
+
+    .progress-bar-wrap {
+      background: var(--border);
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      background: linear-gradient(90deg, var(--accent), var(--success));
+      height: 100%;
+      width: 0%;
+      transition: width 0.25s ease;
+    }
+
+    .progress-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    /* Shopping List Panel */
+    .shopping-panel {
+      background: var(--card);
+      border: 2px solid var(--cart-border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .shopping-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .shopping-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--cart);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .shopping-empty {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      padding: 8px 0;
+    }
+
+    .shopping-grid {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 8px 12px;
+    }
+
+    .shopping-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    .shopping-item.bought span {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .shopping-item-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      flex: 1;
+    }
+
+    .shopping-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .mini-btn {
+      padding: 3px 7px;
+      font-size: 0.75rem;
+      border-radius: 6px;
+    }
+
+    /* Add box & search */
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 760px) {
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .box {
+      display: flex;
+      gap: 8px;
+      background: var(--card);
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .box input, .box select {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.88rem;
+    }
+
+    .box input {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .btn-primary:hover {
+      opacity: 0.92;
+      color: #fff;
+    }
+
+    /* Category Cards */
+    .category-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+
+    .category-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .category-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .category-count {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      background: var(--bg);
+      padding: 2px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+    }
+
+    .checklist {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 6px 14px;
+    }
+
+    .item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      transition: background 0.12s, border-color 0.12s;
+    }
+
+    .item:hover {
+      background: var(--bg);
+      border-color: var(--border);
+    }
+
+    .item.in-cart {
+      background: var(--cart-soft);
+      border-color: var(--cart-border);
+    }
+
+    .item-left {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      cursor: pointer;
+      user-select: none;
+      flex: 1;
+    }
+
+    .item input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .item span {
+      font-size: 0.9rem;
+      transition: color 0.15s;
+    }
+
+    .item.checked span {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .buy-btn {
+      padding: 4px 8px;
+      font-size: 0.74rem;
+      border-radius: 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text-muted);
+    }
+
+    .buy-btn:hover {
+      border-color: var(--cart);
+      color: var(--cart);
+    }
+
+    .buy-btn.active {
+      background: var(--cart);
+      color: #fff;
+      border-color: var(--cart);
+      font-weight: 600;
+    }
+
+    body.hide-checked .item.checked {
+      display: none;
+    }
+
+    body.only-to-buy .item:not(.in-cart) {
+      display: none;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--text);
+      color: var(--bg);
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      z-index: 200;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    @media print {
+      header { position: static; box-shadow: none; }
+      .controls, .toolbar, .buy-btn { display: none; }
+      body { padding: 0; background: #fff; color: #000; }
+      .category-card, .shopping-panel { break-inside: avoid; border: 1px solid #ccc; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-top">
+        <h1>Granular Travel Checklist & Shopping List</h1>
+        <div class="controls">
+          <button class="btn-cart-toggle" id="filterBuyBtn" onclick="toggleOnlyToBuy()">🛒 Filter: To Buy (<span id="headerCartCount">0</span>)</button>
+          <button id="toggleCheckedBtn" onclick="toggleHideChecked()">Hide Packed</button>
+          <button onclick="toggleTheme()">Dark / Light</button>
+          <button onclick="window.print()">Print</button>
+          <button onclick="resetAll()">Reset All</button>
+        </div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="progress-stats">
+        <span id="progressText">0 of 0 items packed</span>
+        <span id="cartStatsText" style="color: var(--cart); font-weight: 600;">0 items in shopping list</span>
+        <span id="progressPercent">0%</span>
+      </div>
+    </header>
+
+    <!-- Shopping List Panel -->
+    <div class="shopping-panel" id="shoppingPanel">
+      <div class="shopping-header">
+        <div class="shopping-title">
+          🛒 Shopping List (<span id="cartCount">0</span> items to buy)
+        </div>
+        <div class="controls">
+          <button onclick="copyShoppingList()">📋 Copy for Keep / WhatsApp</button>
+          <button onclick="clearBoughtFromCart()">Clear Bought</button>
+        </div>
+      </div>
+      <div id="shoppingListContent"></div>
+    </div>
+
+    <!-- Search and Add Custom Item -->
+    <div class="toolbar">
+      <div class="box">
+        <input type="text" id="searchInput" placeholder="🔍 Quick search item (e.g., toothpaste, charger, ORS)..." oninput="render()">
+      </div>
+      <div class="box">
+        <input type="text" id="newItemInput" placeholder="Add custom item...">
+        <select id="newCategorySelect"></select>
+        <button class="btn-primary" onclick="addCustomItem()">+ Add</button>
+      </div>
+    </div>
+
+    <div id="categoriesContainer"></div>
+  </div>
+
+  <div class="toast" id="toast">Copied to clipboard!</div>
+
+  <script>
+    const rawItems = [
+      // 1. Toiletries & Grooming (Split individually)
+      ["Comb", "Toiletries & Grooming"],
+      ["Hairbrush", "Toiletries & Grooming"],
+      ["Toothbrush", "Toiletries & Grooming"],
+      ["Toothpaste", "Toiletries & Grooming"],
+      ["Tongue cleaner", "Toiletries & Grooming"],
+      ["Dental floss", "Toiletries & Grooming"],
+      ["Travel mouthwash", "Toiletries & Grooming"],
+      ["Face wash", "Toiletries & Grooming"],
+      ["Face moisturizer", "Toiletries & Grooming"],
+      ["Sunscreen (SPF 50+)", "Toiletries & Grooming"],
+      ["Lip balm", "Toiletries & Grooming"],
+      ["Shampoo", "Toiletries & Grooming"],
+      ["Hair conditioner", "Toiletries & Grooming"],
+      ["Body wash / soap bar", "Toiletries & Grooming"],
+      ["Hair oil", "Toiletries & Grooming"],
+      ["Hair serum / styling gel", "Toiletries & Grooming"],
+      ["Deodorant / underarm roll-on", "Toiletries & Grooming"],
+      ["Pocket perfume / cologne", "Toiletries & Grooming"],
+      ["Beard trimmer", "Toiletries & Grooming"],
+      ["Trimmer charging cable", "Toiletries & Grooming"],
+      ["Razor & extra blades", "Toiletries & Grooming"],
+      ["Shaving gel / foam", "Toiletries & Grooming"],
+      ["Aftershave lotion", "Toiletries & Grooming"],
+      ["Nail clipper", "Toiletries & Grooming"],
+      ["Tweezers", "Toiletries & Grooming"],
+      ["Safety pins", "Toiletries & Grooming"],
+      ["Cotton swabs (earbuds)", "Toiletries & Grooming"],
+      ["Pocket tissues", "Toiletries & Grooming"],
+      ["Wet wipes", "Toiletries & Grooming"],
+      ["Hand sanitizer", "Toiletries & Grooming"],
+      ["Travel paper soap strips", "Toiletries & Grooming"],
+      ["Quick-dry microfiber bath towel", "Toiletries & Grooming"],
+      ["Small face towel", "Toiletries & Grooming"],
+
+      // 2. Clothing & Footwear (Split individually)
+      ["Underwear (1 per day + 2 extra)", "Clothing & Footwear"],
+      ["Socks (1 pair per day + 2 extra)", "Clothing & Footwear"],
+      ["Undershirts / vests", "Clothing & Footwear"],
+      ["Casual T-shirts", "Clothing & Footwear"],
+      ["Polo T-shirts", "Clothing & Footwear"],
+      ["Casual collared shirts", "Clothing & Footwear"],
+      ["Kurtas / traditional wear", "Clothing & Footwear"],
+      ["Jeans", "Clothing & Footwear"],
+      ["Chinos / casual trousers", "Clothing & Footwear"],
+      ["Night tracks / pajama bottoms", "Clothing & Footwear"],
+      ["Soft sleep T-shirts", "Clothing & Footwear"],
+      ["Workout / running shorts", "Clothing & Footwear"],
+      ["Dry-fit gym / yoga T-shirts", "Clothing & Footwear"],
+      ["Workout / yoga track pants", "Clothing & Footwear"],
+      ["Light jacket / hoodie / sweater", "Clothing & Footwear"],
+      ["Belt", "Clothing & Footwear"],
+      ["Handkerchiefs", "Clothing & Footwear"],
+      ["Cap / sun hat", "Clothing & Footwear"],
+      ["UV sunglasses", "Clothing & Footwear"],
+      ["Sunglasses hard case", "Clothing & Footwear"],
+      ["Comfortable walking / running shoes", "Clothing & Footwear"],
+      ["Flip-flops / bathroom slippers", "Clothing & Footwear"],
+      ["Formal / dress shoes or sandals", "Clothing & Footwear"],
+      ["Laundry bags (for used clothes)", "Clothing & Footwear"],
+      ["Shoe bags (for packing footwear)", "Clothing & Footwear"],
+
+      // 3. Electronics & Tech (Split individually)
+      ["Primary smartphone", "Electronics & Tech"],
+      ["Secondary smartphone", "Electronics & Tech"],
+      ["Fast-charging wall adapter", "Electronics & Tech"],
+      ["USB-C charging cables (x2)", "Electronics & Tech"],
+      ["Power bank (fully charged)", "Electronics & Tech"],
+      ["Short cable for power bank", "Electronics & Tech"],
+      ["Wireless earbuds + charging case", "Electronics & Tech"],
+      ["Wired earphones (backup)", "Electronics & Tech"],
+      ["Smartwatch / fitness band", "Electronics & Tech"],
+      ["Smartwatch magnetic charger", "Electronics & Tech"],
+      ["Laptop", "Electronics & Tech"],
+      ["Laptop charger", "Electronics & Tech"],
+      ["Wireless mouse", "Electronics & Tech"],
+      ["Multi-plug / universal extension adapter", "Electronics & Tech"],
+      ["SIM ejector pin", "Electronics & Tech"],
+
+      // 4. Documents, Money & Essentials (Split individually)
+      ["Aadhaar card (original)", "Documents, Money & Essentials"],
+      ["PAN card (original)", "Documents, Money & Essentials"],
+      ["Driving License (original)", "Documents, Money & Essentials"],
+      ["Printed flight / train tickets", "Documents, Money & Essentials"],
+      ["Hotel booking confirmations", "Documents, Money & Essentials"],
+      ["Wallet", "Documents, Money & Essentials"],
+      ["Debit cards", "Documents, Money & Essentials"],
+      ["Credit cards", "Documents, Money & Essentials"],
+      ["Cash in small notes (₹10, ₹20, ₹50, ₹100)", "Documents, Money & Essentials"],
+      ["Cash emergency stash (kept separate)", "Documents, Money & Essentials"],
+      ["House / room keys", "Documents, Money & Essentials"],
+      ["Small luggage padlock + key", "Documents, Money & Essentials"],
+      ["2 passport-size photographs", "Documents, Money & Essentials"],
+
+      // 5. Health, Wellness & First Aid (Split individually)
+      ["Daily vitamins / personal supplements", "Health, Wellness & First Aid"],
+      ["Paracetamol tablets (fever / headache)", "Health, Wellness & First Aid"],
+      ["Ibuprofen / body pain tablets", "Health, Wellness & First Aid"],
+      ["Antacid tablets / sachets (acidity)", "Health, Wellness & First Aid"],
+      ["Pudin Hara (stomach / indigestion)", "Health, Wellness & First Aid"],
+      ["ORS electrolyte packets", "Health, Wellness & First Aid"],
+      ["Anti-diarrheal tablets (Loperamide)", "Health, Wellness & First Aid"],
+      ["Anti-allergy / Cetirizine tablets", "Health, Wellness & First Aid"],
+      ["Motion sickness / vomiting tablets", "Health, Wellness & First Aid"],
+      ["Adhesive Band-Aids", "Health, Wellness & First Aid"],
+      ["Antiseptic cream (Betadine / Soframycin)", "Health, Wellness & First Aid"],
+      ["Pain relief spray / balm (Volini / Moov)", "Health, Wellness & First Aid"],
+      ["Mosquito repellent cream (Odomos)", "Health, Wellness & First Aid"],
+      ["Eyeglasses + hard case", "Health, Wellness & First Aid"],
+      ["Microfiber lens cleaning cloth", "Health, Wellness & First Aid"],
+      ["Contact lenses (if used)", "Health, Wellness & First Aid"],
+      ["Contact lens solution (if used)", "Health, Wellness & First Aid"],
+
+      // 6. Reading, Comfort & Miscellaneous (Split individually)
+      ["Reusable water bottle", "Reading, Comfort & Miscellaneous"],
+      ["Roasted makhanas / dry snacks", "Reading, Comfort & Miscellaneous"],
+      ["Mixed nuts / trail mix", "Reading, Comfort & Miscellaneous"],
+      ["Protein / energy bars", "Reading, Comfort & Miscellaneous"],
+      ["Current reading book", "Reading, Comfort & Miscellaneous"],
+      ["Pocket notebook / journal", "Reading, Comfort & Miscellaneous"],
+      ["2 working pens", "Reading, Comfort & Miscellaneous"],
+      ["Inflatable / memory foam neck pillow", "Reading, Comfort & Miscellaneous"],
+      ["Sleep eye mask", "Reading, Comfort & Miscellaneous"],
+      ["Foam earplugs (for transit noise)", "Reading, Comfort & Miscellaneous"],
+      ["Compact umbrella", "Reading, Comfort & Miscellaneous"],
+      ["Light raincoat / poncho", "Reading, Comfort & Miscellaneous"],
+      ["Foldable tote bag / daypack", "Reading, Comfort & Miscellaneous"],
+      ["Ziplock bags (for liquids / cables)", "Reading, Comfort & Miscellaneous"],
+
+      // 7. Final Pre-Departure Checks (Split individually)
+      ["Download offline Google Maps", "Final Pre-Departure Checks"],
+      ["Download offline playlists / videos", "Final Pre-Departure Checks"],
+      ["Empty fridge of perishable food", "Final Pre-Departure Checks"],
+      ["Take out all household trash", "Final Pre-Departure Checks"],
+      ["Unplug non-essential appliances", "Final Pre-Departure Checks"],
+      ["Switch off water geyser", "Final Pre-Departure Checks"],
+      ["Turn off main kitchen gas valve", "Final Pre-Departure Checks"],
+      ["Lock all windows and balcony doors", "Final Pre-Departure Checks"],
+      ["Lock main door and double-check keys", "Final Pre-Departure Checks"]
+    ];
+
+    const defaultData = rawItems.map(([label, category], idx) => ({
+      id: "item_" + (idx + 1),
+      label,
+      category,
+      checked: false,
+      toBuy: false,
+      bought: false
+    }));
+
+    const STORAGE_KEY = "travel_checklist_granular_v2";
+    let items = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultData;
+
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      render();
+    }
+
+    function getCategories() {
+      return [...new Set(items.map(i => i.category))];
+    }
+
+    function populateCategorySelect() {
+      const select = document.getElementById("newCategorySelect");
+      const currentVal = select.value;
+      select.innerHTML = "";
+      getCategories().forEach(cat => {
+        const opt = document.createElement("option");
+        opt.value = cat;
+        opt.textContent = cat;
+        select.appendChild(opt);
+      });
+      if (currentVal) select.value = currentVal;
+    }
+
+    function togglePacked(id) {
+      const item = items.find(i => i.id === id);
+      if (item) {
+        item.checked = !item.checked;
+        save();
+      }
+    }
+
+    function toggleToBuy(id) {
+      const item = items.find(i => i.id === id);
+      if (item) {
+        item.toBuy = !item.toBuy;
+        if (!item.toBuy) item.bought = false;
+        save();
+      }
+    }
+
+    function toggleBoughtInCart(id) {
+      const item = items.find(i => i.id === id);
+      if (item) {
+        item.bought = !item.bought;
+        save();
+      }
+    }
+
+    function moveBoughtToPacked(id) {
+      const item = items.find(i => i.id === id);
+      if (item) {
+        item.toBuy = false;
+        item.bought = false;
+        item.checked = true;
+        save();
+      }
+    }
+
+    function clearBoughtFromCart() {
+      items.forEach(i => {
+        if (i.toBuy && i.bought) {
+          i.toBuy = false;
+          i.bought = false;
+        }
+      });
+      save();
+    }
+
+    function addCustomItem() {
+      const input = document.getElementById("newItemInput");
+      const select = document.getElementById("newCategorySelect");
+      const label = input.value.trim();
+      if (!label) return;
+      items.push({
+        id: "custom_" + Date.now(),
+        label,
+        category: select.value,
+        checked: false,
+        toBuy: false,
+        bought: false
+      });
+      input.value = "";
+      save();
+    }
+
+    function copyShoppingList() {
+      const toBuyItems = items.filter(i => i.toBuy);
+      if (toBuyItems.length === 0) {
+        showToast("Your shopping list is currently empty!");
+        return;
+      }
+      const lines = ["🛒 Travel Shopping List:"];
+      toBuyItems.forEach(i => {
+        lines.push(`${i.bought ? "[x]" : "[ ]"} ${i.label} (${i.category})`);
+      });
+      navigator.clipboard.writeText(lines.join("\n")).then(() => {
+        showToast("Shopping list copied to clipboard!");
+      });
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2200);
+    }
+
+    function resetAll() {
+      if (confirm("Uncheck all packed items, clear shopping list, and reset custom additions?")) {
+        items = JSON.parse(JSON.stringify(defaultData));
+        save();
+      }
+    }
+
+    function toggleHideChecked() {
+      document.body.classList.toggle("hide-checked");
+      const isHidden = document.body.classList.contains("hide-checked");
+      document.getElementById("toggleCheckedBtn").textContent = isHidden ? "Show Packed" : "Hide Packed";
+    }
+
+    function toggleOnlyToBuy() {
+      document.body.classList.toggle("only-to-buy");
+      const active = document.body.classList.contains("only-to-buy");
+      const btn = document.getElementById("filterBuyBtn");
+      btn.style.background = active ? "var(--cart)" : "var(--cart-soft)";
+      btn.style.color = active ? "#fff" : "var(--cart)";
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute("data-theme");
+      document.documentElement.setAttribute("data-theme", current === "dark" ? "light" : "dark");
+    }
+
+    function render() {
+      populateCategorySelect();
+      const query = document.getElementById("searchInput").value.trim().toLowerCase();
+
+      // Render Shopping List Panel
+      const toBuyItems = items.filter(i => i.toBuy);
+      document.getElementById("cartCount").textContent = toBuyItems.length;
+      document.getElementById("headerCartCount").textContent = toBuyItems.length;
+      document.getElementById("cartStatsText").textContent = `${toBuyItems.length} item${toBuyItems.length === 1 ? '' : 's'} in shopping list`;
+
+      const shoppingContainer = document.getElementById("shoppingListContent");
+      if (toBuyItems.length === 0) {
+        shoppingContainer.innerHTML = `<div class="shopping-empty">Click <b>"+ 🛒 Buy"</b> next to any item below to add it to your shopping list.</div>`;
+      } else {
+        shoppingContainer.innerHTML = `
+          <ul class="shopping-grid">
+            ${toBuyItems.map(item => `
+              <li class="shopping-item ${item.bought ? 'bought' : ''}">
+                <div class="shopping-item-left" onclick="toggleBoughtInCart('${item.id}')" title="Click to mark bought">
+                  <input type="checkbox" ${item.bought ? 'checked' : ''} onclick="event.stopPropagation(); toggleBoughtInCart('${item.id}')">
+                  <span>${item.label}</span>
+                </div>
+                <div class="shopping-actions">
+                  <button class="mini-btn" onclick="moveBoughtToPacked('${item.id}')" title="Bought & Packed!">✔ Pack</button>
+                  <button class="mini-btn" onclick="toggleToBuy('${item.id}')" title="Remove from shopping list">✕</button>
+                </div>
+              </li>
+            `).join("")}
+          </ul>
+        `;
+      }
+
+      // Render Categories
+      const container = document.getElementById("categoriesContainer");
+      container.innerHTML = "";
+
+      const categories = getCategories();
+      categories.forEach(cat => {
+        const allCatItems = items.filter(i => i.category === cat);
+        const visibleCatItems = allCatItems.filter(i => !query || i.label.toLowerCase().includes(query));
+        if (visibleCatItems.length === 0) return;
+
+        const checkedCount = allCatItems.filter(i => i.checked).length;
+
+        const card = document.createElement("div");
+        card.className = "category-card";
+
+        card.innerHTML = `
+          <div class="category-header">
+            <div class="category-title">${cat}</div>
+            <div class="category-count">${checkedCount} / ${allCatItems.length} packed</div>
+          </div>
+          <ul class="checklist">
+            ${visibleCatItems.map(item => `
+              <li class="item ${item.checked ? 'checked' : ''} ${item.toBuy ? 'in-cart' : ''}">
+                <div class="item-left" onclick="togglePacked('${item.id}')">
+                  <input type="checkbox" ${item.checked ? 'checked' : ''} onclick="event.stopPropagation(); togglePacked('${item.id}')">
+                  <span>${item.label}</span>
+                </div>
+                <button class="buy-btn ${item.toBuy ? 'active' : ''}" onclick="toggleToBuy('${item.id}')">
+                  ${item.toBuy ? '🛒 In Cart' : '+ 🛒 Buy'}
+                </button>
+              </li>
+            `).join("")}
+          </ul>
+        `;
+        container.appendChild(card);
+      });
+
+      const total = items.length;
+      const packed = items.filter(i => i.checked).length;
+      const pct = total ? Math.round((packed / total) * 100) : 0;
+
+      document.getElementById("progressBar").style.width = pct + "%";
+      document.getElementById("progressText").textContent = `${packed} of ${total} items packed`;
+      document.getElementById("progressPercent").textContent = pct + "%";
+    }
+
+    document.getElementById("newItemInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") addCustomItem();
+    });
+
+    render();
+  </script>
+</body>
+</html>
